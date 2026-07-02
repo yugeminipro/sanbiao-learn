@@ -1,0 +1,1087 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>三表入门 · 财务报表学习小程序</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#0f1117;--card:#1a1d27;--card2:#222632;--border:#2a2e3a;
+  --text:#e4e6ec;--text2:#9499a8;--accent:#6c8cff;--accent2:#a78bfa;
+  --green:#34d399;--red:#f87171;--yellow:#fbbf24;--orange:#fb923c;
+  --cyan:#22d3ee;--pink:#f472b6;
+}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif;background:var(--bg);color:var(--text);line-height:1.7;overflow-x:hidden}
+.container{max-width:960px;margin:0 auto;padding:20px 16px}
+
+/* 导航栏 */
+.nav{position:sticky;top:0;z-index:100;background:rgba(15,17,23,.92);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:10px 0}
+.nav-inner{max-width:960px;margin:0 auto;display:flex;gap:6px;padding:0 16px;overflow-x:auto;scrollbar-width:none}
+.nav-inner::-webkit-scrollbar{display:none}
+.nav-btn{padding:8px 16px;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--text2);cursor:pointer;font-size:13px;white-space:nowrap;transition:.2s}
+.nav-btn:hover{border-color:var(--accent);color:var(--text)}
+.nav-btn.active{background:var(--accent);border-color:var(--accent);color:#fff}
+
+/* 页面切换 */
+.page{display:none;animation:fadeIn .4s}
+.page.active{display:block}
+@keyframes fadeIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+
+/* 通用卡片 */
+.card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:24px;margin-bottom:20px}
+.card h2{font-size:20px;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.card h3{font-size:16px;color:var(--accent);margin:16px 0 8px}
+
+/* 标签 */
+.tag{display:inline-block;padding:3px 10px;border-radius:12px;font-size:12px;margin:2px}
+.tag-green{background:rgba(52,211,153,.15);color:var(--green)}
+.tag-red{background:rgba(248,113,113,.15);color:var(--red)}
+.tag-blue{background:rgba(108,140,255,.15);color:var(--accent)}
+.tag-yellow{background:rgba(251,191,36,.15);color:var(--yellow)}
+.tag-purple{background:rgba(167,139,250,.15);color:var(--accent2)}
+
+/* 报表表格 */
+.stmt-table{width:100%;border-collapse:collapse;margin:12px 0;font-size:14px}
+.stmt-table th{text-align:left;padding:8px 12px;background:var(--card2);border-bottom:2px solid var(--border);color:var(--accent);font-weight:600}
+.stmt-table td{padding:8px 12px;border-bottom:1px solid var(--border)}
+.stmt-table tr:hover{background:rgba(108,140,255,.05)}
+.stmt-table .indent{padding-left:28px}
+.stmt-table .indent2{padding-left:44px}
+.stmt-table .sum-row{font-weight:700;border-top:2px solid var(--accent);color:var(--accent)}
+.stmt-table .total-row{font-weight:700;border-top:3px double var(--green);color:var(--green)}
+.stmt-table .num{text-align:right;font-variant-numeric:tabular-nums}
+.stmt-table .positive{color:var(--green)}
+.stmt-table .negative{color:var(--red)}
+
+/* 关键等式 */
+.key-eq{background:linear-gradient(135deg,rgba(108,140,255,.1),rgba(167,139,250,.1));border:1px solid rgba(108,140,255,.3);border-radius:12px;padding:16px 20px;margin:16px 0;text-align:center;font-size:18px;font-weight:600;letter-spacing:1px}
+.key-eq .hl{color:var(--yellow);font-size:20px}
+
+/* 流程图 */
+.flow{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:8px;margin:20px 0}
+.flow-item{padding:10px 18px;border-radius:10px;font-weight:600;font-size:14px}
+.flow-arrow{color:var(--text2);font-size:20px}
+
+/* 解释块 */
+.explain{background:var(--card2);border-left:3px solid var(--accent);border-radius:0 8px 8px 0;padding:14px 16px;margin:12px 0;font-size:14px;color:var(--text2);line-height:1.8}
+.explain strong{color:var(--text)}
+
+/* 知识卡片 */
+.know-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;margin:16px 0}
+.know-item{background:var(--card2);border-radius:10px;padding:16px;text-align:center;border:1px solid var(--border);transition:.2s}
+.know-item:hover{border-color:var(--accent);transform:translateY(-2px)}
+.know-item .icon{font-size:28px;margin-bottom:8px}
+.know-item .title{font-weight:600;font-size:14px;margin-bottom:4px}
+.know-item .desc{font-size:12px;color:var(--text2)}
+
+/* 模拟器 */
+.sim-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+@media(max-width:700px){.sim-grid{grid-template-columns:1fr}}
+.sim-panel{background:var(--card2);border-radius:12px;padding:20px;border:1px solid var(--border)}
+.sim-panel h3{margin:0 0 16px;font-size:15px}
+.slider-group{margin-bottom:14px}
+.slider-group label{display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px;color:var(--text2)}
+.slider-group label span:last-child{color:var(--text);font-weight:600;font-variant-numeric:tabular-nums}
+input[type=range]{width:100%;height:6px;-webkit-appearance:none;background:var(--border);border-radius:3px;outline:none}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:50%;background:var(--accent);cursor:pointer;border:2px solid #fff}
+.stat-row{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);font-size:13px}
+.stat-row:last-child{border-bottom:none}
+.stat-row .label{color:var(--text2)}
+.stat-row .value{font-weight:600;font-variant-numeric:tabular-nums}
+.stat-row.highlight .value{color:var(--yellow);font-size:15px}
+
+/* 警告 */
+.warning{background:rgba(251,191,36,.1);border:1px solid rgba(251,191,36,.3);border-radius:8px;padding:12px 16px;margin-top:12px;font-size:13px;color:var(--yellow)}
+
+/* 答题 */
+.quiz-q{background:var(--card2);border-radius:12px;padding:20px;margin-bottom:16px;border:1px solid var(--border)}
+.quiz-q h4{margin-bottom:12px;font-size:15px}
+.quiz-q .q-num{color:var(--accent);margin-right:6px}
+.quiz-opt{display:block;padding:10px 14px;margin:6px 0;border-radius:8px;border:1px solid var(--border);cursor:pointer;font-size:14px;transition:.2s}
+.quiz-opt:hover{border-color:var(--accent);background:rgba(108,140,255,.08)}
+.quiz-opt.selected{border-color:var(--accent);background:rgba(108,140,255,.15)}
+.quiz-opt.correct{border-color:var(--green);background:rgba(52,211,153,.15);color:var(--green)}
+.quiz-opt.wrong{border-color:var(--red);background:rgba(248,113,113,.1);color:var(--red)}
+.quiz-feedback{margin-top:10px;padding:10px 14px;border-radius:8px;font-size:13px;display:none}
+.quiz-feedback.show{display:block}
+.quiz-feedback.pass{background:rgba(52,211,153,.1);color:var(--green)}
+.quiz-feedback.fail{background:rgba(248,113,113,.1);color:var(--red)}
+
+.btn{padding:10px 28px;border-radius:10px;border:none;background:var(--accent);color:#fff;font-size:15px;font-weight:600;cursor:pointer;transition:.2s}
+.btn:hover{opacity:.85;transform:translateY(-1px)}
+.btn-outline{background:transparent;border:1px solid var(--accent);color:var(--accent)}
+
+.score-display{text-align:center;padding:30px;background:linear-gradient(135deg,rgba(108,140,255,.1),rgba(167,139,250,.1));border-radius:14px;margin:20px 0}
+.score-display .big{font-size:48px;font-weight:700;color:var(--accent)}
+
+/* 首页英雄 */
+.hero{text-align:center;padding:40px 20px}
+.hero h1{font-size:32px;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:12px}
+.hero p{color:var(--text2);font-size:16px;max-width:500px;margin:0 auto 24px}
+
+/* 公司案例 */
+.case-card{cursor:pointer;transition:.25s}
+.case-card:hover{border-color:var(--accent);transform:translateY(-3px);box-shadow:0 4px 16px rgba(108,140,255,.15)}
+.case-card.active-case{border-color:var(--accent);background:rgba(108,140,255,.1);box-shadow:0 0 0 2px rgba(108,140,255,.3)}
+
+/* 关联动画 */
+.link-diagram{position:relative;padding:30px 0}
+.link-center{width:120px;height:120px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;margin:0 auto;font-weight:700;font-size:15px;text-align:center;z-index:2;position:relative}
+.link-node{position:absolute;width:110px;height:60px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;border:2px solid;z-index:2}
+.link-line{position:absolute;height:2px;background:var(--border);z-index:1}
+</style>
+</head>
+<body>
+
+<!-- 导航栏 -->
+<nav class="nav">
+<div class="nav-inner">
+  <button class="nav-btn active" onclick="showPage('home')">🏠 首页</button>
+  <button class="nav-btn" onclick="showPage('income')">📋 利润表</button>
+  <button class="nav-btn" onclick="showPage('balance')">📊 资产负债表</button>
+  <button class="nav-btn" onclick="showPage('cashflow')">💰 现金流表</button>
+  <button class="nav-btn" onclick="showPage('sim')">🎮 模拟经营</button>
+  <button class="nav-btn" onclick="showPage('cases')">🏢 公司案例</button>
+  <button class="nav-btn" onclick="showPage('quiz')">✏️ 答题测验</button>
+</div>
+</nav>
+
+<!-- ==================== 首页 ==================== -->
+<div class="page active" id="page-home">
+<div class="container">
+  <div class="hero">
+    <h1>三张报表 · 一次搞懂</h1>
+    <p>利润表告诉你赚了多少钱，资产负债表告诉你值多少钱，现金流表告诉你手里有多少钱</p>
+  </div>
+
+  <!-- 三表关系图 -->
+  <div class="card">
+    <h2>🔗 三张报表的关系</h2>
+    <p style="text-align:center;color:var(--text2);margin-bottom:16px">它们不是孤立的，而是通过「净利润」和「现金」紧密相连</p>
+    
+    <div class="flow" style="margin:24px 0">
+      <div class="flow-item" style="background:rgba(108,140,255,.15);color:var(--accent)">📋 利润表</div>
+      <div class="flow-arrow">→ 净利润 →</div>
+      <div class="flow-item" style="background:rgba(167,139,250,.15);color:var(--accent2)">📊 资产负债表<br><small style="font-weight:400;font-size:11px">未分配利润增加</small></div>
+      <div class="flow-arrow">→ 现金 →</div>
+      <div class="flow-item" style="background:rgba(52,211,153,.15);color:var(--green)">💰 现金流表<br><small style="font-weight:400;font-size:11px">解释现金变动</small></div>
+    </div>
+    
+    <div class="explain">
+      <strong>核心逻辑：</strong>利润表算出净利润 → 净利润流入资产负债表的「所有者权益」→ 但利润≠现金！现金流量表负责解释「现金到底怎么变的」。
+    </div>
+    
+    <h3>三个形象比喻</h3>
+    <div class="know-grid">
+      <div class="know-item">
+        <div class="icon">📸</div>
+        <div class="title">利润表 = 视频</div>
+        <div class="desc">记录一段时间内<br>「赚了多少」</div>
+      </div>
+      <div class="know-item">
+        <div class="icon">📷</div>
+        <div class="title">资产负债表 = 照片</div>
+        <div class="desc">某个时间点<br>「家里有多少」</div>
+      </div>
+      <div class="know-item">
+        <div class="icon">💧</div>
+        <div class="title">现金流表 = 水表</div>
+        <div class="desc">记录一段时间内<br>「水（钱）怎么流的」</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 核心等式 -->
+  <div class="card">
+    <h2>⚖️ 核心等式</h2>
+    <div class="key-eq">
+      <div style="margin-bottom:8px">📋 利润表：收入 <span class="hl">-</span> 费用 <span class="hl">=</span> 净利润</div>
+      <div style="margin-bottom:8px">📊 资产负债表：资产 <span class="hl">=</span> 负债 <span class="hl">+</span> 所有者权益</div>
+      <div>💰 现金流表：经营 <span class="hl">+</span> 投资 <span class="hl">+</span> 筹资 <span class="hl">=</span> 现金净增</div>
+    </div>
+  </div>
+
+  <!-- 快速入门 -->
+  <div class="card">
+    <h2>🚀 快速入门路径</h2>
+    <div class="know-grid" style="grid-template-columns:repeat(3,1fr)">
+      <div class="know-item" style="cursor:pointer" onclick="showPage('income')">
+        <div class="icon">1️⃣</div>
+        <div class="title">利润表</div>
+        <div class="desc">先学「赚了多少」<br>最直观的一张表</div>
+      </div>
+      <div class="know-item" style="cursor:pointer" onclick="showPage('balance')">
+        <div class="icon">2️⃣</div>
+        <div class="title">资产负债表</div>
+        <div class="desc">再学「家底多厚」<br>理解会计恒等式</div>
+      </div>
+      <div class="know-item" style="cursor:pointer" onclick="showPage('cashflow')">
+        <div class="icon">3️⃣</div>
+        <div class="title">现金流表</div>
+        <div class="desc">最后学「钱从哪来」<br>最考验功力的表</div>
+      </div>
+    </div>
+    <div class="explain" style="margin-top:16px">
+      <strong>建议：</strong>学完三张表后，去 <strong>「🎮 模拟经营」</strong> 动手调参数，看看经营决策如何同时影响三张表。最后用 <strong>「✏️ 答题测验」</strong> 检验掌握程度！
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ==================== 利润表 ==================== -->
+<div class="page" id="page-income">
+<div class="container">
+  <div class="card">
+    <h2>📋 利润表（Income Statement）</h2>
+    <div class="explain">
+      <strong>一句话：</strong>告诉你公司在一段时间内（比如一年）<strong>赚了多少钱</strong>。<br>
+      像一段视频，记录从收入到利润的完整过程。
+    </div>
+
+    <h3>完整结构（以示例公司为例）</h3>
+    <table class="stmt-table">
+      <tr><th>项目</th><th class="num">金额（万元）</th></tr>
+      <tr><td>营业收入</td><td class="num">1,000</td></tr>
+      <tr class="indent"><td>减：营业成本</td><td class="num negative">-600</td></tr>
+      <tr class="sum-row"><td>= 毛利润</td><td class="num">400</td></tr>
+      <tr class="indent"><td>减：销售费用</td><td class="num negative">-80</td></tr>
+      <tr class="indent"><td>减：管理费用</td><td class="num negative">-50</td></tr>
+      <tr class="indent"><td>减：研发费用</td><td class="num negative">-30</td></tr>
+      <tr class="sum-row"><td>= 营业利润（EBIT）</td><td class="num">240</td></tr>
+      <tr class="indent"><td>减：利息费用</td><td class="num negative">-20</td></tr>
+      <tr class="indent"><td>减：所得税</td><td class="num negative">-55</td></tr>
+      <tr class="total-row"><td>= 净利润</td><td class="num">165</td></tr>
+    </table>
+
+    <h3>关键概念详解</h3>
+    <div class="explain">
+      <strong>毛利率 = 毛利润 / 营业收入 = 40%</strong><br>
+      每卖100块钱的东西，扣除成本后剩下40块。毛利率越高，说明产品越有「附加值」。<br><br>
+      <strong>营业利润率 = 营业利润 / 营业收入 = 24%</strong><br>
+      扣除运营费用后的真实赚钱能力。<br><br>
+      <strong>净利润率 = 净利润 / 营业收入 = 16.5%</strong><br>
+      最终落到口袋里的比例。
+    </div>
+
+    <h3>利润表的流向</h3>
+    <div class="flow">
+      <div class="flow-item" style="background:rgba(108,140,255,.15);color:var(--accent)">营业收入</div>
+      <div class="flow-arrow">-</div>
+      <div class="flow-item" style="background:rgba(248,113,113,.1);color:var(--red)">成本</div>
+      <div class="flow-arrow">=</div>
+      <div class="flow-item" style="background:rgba(251,191,36,.15);color:var(--yellow)">毛利润</div>
+      <div class="flow-arrow">-</div>
+      <div class="flow-item" style="background:rgba(248,113,113,.1);color:var(--red)">费用</div>
+      <div class="flow-arrow">-</div>
+      <div class="flow-item" style="background:rgba(248,113,113,.1);color:var(--red)">税</div>
+      <div class="flow-arrow">=</div>
+      <div class="flow-item" style="background:rgba(52,211,153,.15);color:var(--green)">净利润</div>
+    </div>
+
+    <h3>为什么重要？</h3>
+    <div class="know-grid">
+      <div class="know-item">
+        <div class="title">看赚钱能力</div>
+        <div class="desc">收入高不代表赚钱多<br>要看最终净利润</div>
+      </div>
+      <div class="know-item">
+        <div class="title">看成本控制</div>
+        <div class="desc">费用率是否在下降<br>管理效率是否提升</div>
+      </div>
+      <div class="know-item">
+        <div class="title">看增长趋势</div>
+        <div class="desc">收入和利润是否<br>在同步增长</div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ==================== 资产负债表 ==================== -->
+<div class="page" id="page-balance">
+<div class="container">
+  <div class="card">
+    <h2>📊 资产负债表（Balance Sheet）</h2>
+    <div class="explain">
+      <strong>一句话：</strong>告诉你公司在某个时间点（比如12月31日）<strong>有多少家底</strong>。<br>
+      像一张照片，定格那个瞬间的财务状况。
+    </div>
+
+    <h3>完整结构</h3>
+    <table class="stmt-table">
+      <tr><th colspan="2">资产方（公司拥有什么）</th></tr>
+      <tr><th>项目</th><th class="num">金额（万元）</th></tr>
+      <tr><td><strong>流动资产</strong></td><td></td></tr>
+      <tr class="indent"><td>货币资金（现金）</td><td class="num">80</td></tr>
+      <tr class="indent"><td>应收账款</td><td class="num">120</td></tr>
+      <tr class="indent"><td>存货</td><td class="num">100</td></tr>
+      <tr class="sum-row"><td>= 流动资产合计</td><td class="num">300</td></tr>
+      <tr><td><strong>非流动资产</strong></td><td></td></tr>
+      <tr class="indent"><td>固定资产（厂房设备）</td><td class="num">500</td></tr>
+      <tr class="indent"><td>无形资产（专利品牌）</td><td class="num">100</td></tr>
+      <tr class="sum-row"><td>= 非流动资产合计</td><td class="num">600</td></tr>
+      <tr class="total-row"><td>总资产</td><td class="num">900</td></tr>
+    </table>
+
+    <table class="stmt-table" style="margin-top:24px">
+      <tr><th colspan="2">负债+权益方（钱从哪来）</th></tr>
+      <tr><th>项目</th><th class="num">金额（万元）</th></tr>
+      <tr><td><strong>流动负债</strong></td><td></td></tr>
+      <tr class="indent"><td>应付账款</td><td class="num">100</td></tr>
+      <tr class="indent"><td>短期借款</td><td class="num">80</td></tr>
+      <tr class="sum-row"><td>= 流动负债合计</td><td class="num">180</td></tr>
+      <tr><td><strong>非流动负债</strong></td><td></td></tr>
+      <tr class="indent"><td>长期借款</td><td class="num">220</td></tr>
+      <tr class="sum-row"><td>= 非流动负债合计</td><td class="num">220</td></tr>
+      <tr><td><strong>所有者权益</strong></td><td></td></tr>
+      <tr class="indent"><td>股本</td><td class="num">200</td></tr>
+      <tr class="indent"><td>未分配利润</td><td class="num">300</td></tr>
+      <tr class="sum-row"><td>= 所有者权益合计</td><td class="num">500</td></tr>
+      <tr class="total-row"><td>负债 + 权益</td><td class="num">900</td></tr>
+    </table>
+
+    <div class="key-eq" style="margin-top:20px">
+      资产 <span class="hl">=</span> 负债 <span class="hl">+</span> 所有者权益 <br>
+      <small style="color:var(--text2);font-size:13px">900 = 400 + 500 · 永远平衡！</small>
+    </div>
+
+    <h3>通俗理解</h3>
+    <div class="explain">
+      <strong>资产：</strong>公司拥有或控制的、能带来经济利益的资源。比如现金、设备、专利。<br>
+      <strong>负债：</strong>公司欠别人的钱。比如银行贷款、欠供应商的货款。<br>
+      <strong>所有者权益：</strong>公司真正属于股东的部分 = 资产 - 负债。也叫「净资产」。<br><br>
+      <strong>类比：</strong>你买了一套100万的房子（资产），其中贷款60万（负债），自己出了40万（权益）。<br>
+      100万 = 60万 + 40万 ✓
+    </div>
+
+    <h3>关键指标</h3>
+    <div class="know-grid">
+      <div class="know-item">
+        <div class="title">流动比率</div>
+        <div class="desc">流动资产/流动负债<br>= 300/180 = 1.67<br>＞2 较安全</div>
+      </div>
+      <div class="know-item">
+        <div class="title">资产负债率</div>
+        <div class="desc">负债/资产<br>= 400/900 = 44%<br>＜60% 较稳健</div>
+      </div>
+      <div class="know-item">
+        <div class="title">ROE 净资产收益率</div>
+        <div class="desc">净利润/权益<br>= 165/500 = 33%<br>越高越好</div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ==================== 现金流表 ==================== -->
+<div class="page" id="page-cashflow">
+<div class="container">
+  <div class="card">
+    <h2>💰 现金流量表（Cash Flow Statement）</h2>
+    <div class="explain">
+      <strong>一句话：</strong>告诉你公司在一段时间内<strong>现金是怎么流入流出的</strong>。<br>
+      利润可以做假（应计制），但现金不会骗人。现金流是企业的「生命线」。
+    </div>
+
+    <h3>完整结构</h3>
+    <table class="stmt-table">
+      <tr><th>项目</th><th class="num">金额（万元）</th></tr>
+      <tr><td colspan="2" style="color:var(--accent);font-weight:700">一、经营活动现金流（CFO）</td></tr>
+      <tr class="indent"><td>销售商品收到的现金</td><td class="num positive">+950</td></tr>
+      <tr class="indent"><td>购买商品支付的现金</td><td class="num negative">-550</td></tr>
+      <tr class="indent"><td>支付给员工的现金</td><td class="num negative">-130</td></tr>
+      <tr class="indent"><td>支付的税费</td><td class="num negative">-60</td></tr>
+      <tr class="sum-row"><td>= 经营现金流净额（CFO）</td><td class="num positive">+210</td></tr>
+
+      <tr><td colspan="2" style="color:var(--accent2);font-weight:700;margin-top:8px">二、投资活动现金流（CFI）</td></tr>
+      <tr class="indent"><td>购买设备</td><td class="num negative">-100</td></tr>
+      <tr class="indent"><td>出售旧设备</td><td class="num positive">+20</td></tr>
+      <tr class="sum-row"><td>= 投资现金流净额（CFI）</td><td class="num negative">-80</td></tr>
+
+      <tr><td colspan="2" style="color:var(--green);font-weight:700;margin-top:8px">三、筹资活动现金流（CFF）</td></tr>
+      <tr class="indent"><td>借入新贷款</td><td class="num positive">+50</td></tr>
+      <tr class="indent"><td>偿还旧贷款</td><td class="num negative">-30</td></tr>
+      <tr class="indent"><td>支付股利</td><td class="num negative">-40</td></tr>
+      <tr class="sum-row"><td>= 筹资现金流净额（CFF）</td><td class="num">-20</td></tr>
+
+      <tr class="total-row"><td>现金净增加</td><td class="num">+110</td></tr>
+    </table>
+
+    <h3>三大类现金流详解</h3>
+    <div class="know-grid" style="grid-template-columns:repeat(3,1fr)">
+      <div class="know-item" style="border-color:rgba(108,140,255,.3)">
+        <div class="icon">🏭</div>
+        <div class="title" style="color:var(--accent)">经营活动 CFO</div>
+        <div class="desc">日常做生意<br>收到/支付的现金<br><strong>最重要的指标！</strong></div>
+      </div>
+      <div class="know-item" style="border-color:rgba(167,139,250,.3)">
+        <div class="icon">🏗️</div>
+        <div class="title" style="color:var(--accent2)">投资活动 CFI</div>
+        <div class="desc">买卖固定资产<br>投资其他公司<br>通常为负（在扩张）</div>
+      </div>
+      <div class="know-item" style="border-color:rgba(52,211,153,.3)">
+        <div class="icon">🏦</div>
+        <div class="title" style="color:var(--green)">筹资活动 CFF</div>
+        <div class="desc">借钱/还钱<br>发行/回购股票<br>发分红</div>
+      </div>
+    </div>
+
+    <h3>企业生命周期与现金流模式</h3>
+    <table class="stmt-table">
+      <tr><th>阶段</th><th class="num">CFO</th><th class="num">CFI</th><th class="num">CFF</th><th>特征</th></tr>
+      <tr><td>🌱 初创期</td><td class="num negative">-</td><td class="num negative">-</td><td class="num positive">+</td><td>烧钱扩张，靠融资活命</td></tr>
+      <tr><td>🚀 成长期</td><td class="num positive">+</td><td class="num negative">-</td><td class="num positive">+</td><td>赚钱+借钱一起扩张</td></tr>
+      <tr><td>🌳 成熟期</td><td class="num positive">+</td><td class="num negative">-</td><td class="num negative">-</td><td>赚钱够花，开始还债分红</td></tr>
+      <tr><td>🍂 衰退期</td><td class="num negative">-</td><td class="num positive">+</td><td class="num positive">+</td><td>变卖资产+借钱续命</td></tr>
+    </table>
+
+    <h3>CFO vs 净利润：利润质量分析</h3>
+    <div class="explain">
+      <strong>CFO > 净利润（210 > 165）</strong>：利润质量高！公司赚到的是真金白银，不是纸面富贵。<br><br>
+      <strong>如果 CFO < 净利润：</strong>说明很多利润是「应收」的，钱没收回来，利润只是纸面上的。<br><br>
+      <strong>如果 CFO < 0 但净利润 > 0：</strong>⚠️ 危险信号！公司可能在做假账，或者大量赊销导致现金紧张。
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ==================== 模拟经营 ==================== -->
+<div class="page" id="page-sim">
+<div class="container">
+  <div class="card">
+    <h2>🎮 模拟经营实验室</h2>
+    <div class="explain">
+      拖动下方滑块改变经营参数，<strong>三张报表会实时联动更新</strong>。<br>
+      直观感受：每个决策如何同时影响利润、资产和现金流。
+    </div>
+  </div>
+
+  <div class="sim-grid">
+    <!-- 左侧：滑块控制 -->
+    <div class="sim-panel">
+      <h3>🎛️ 经营参数</h3>
+      
+      <div class="slider-group">
+        <label>营业收入（万元）<span id="v-rev">1000</span></label>
+        <input type="range" min="200" max="3000" step="50" value="1000" id="s-rev" oninput="updateSim()">
+      </div>
+      <div class="slider-group">
+        <label>营业成本率 <span id="v-cogs">60%</span></label>
+        <input type="range" min="20" max="90" step="1" value="60" id="s-cogs" oninput="updateSim()">
+      </div>
+      <div class="slider-group">
+        <label>三费合计（万元）<span id="v-exp">160</span></label>
+        <input type="range" min="10" max="600" step="10" value="160" id="s-exp" oninput="updateSim()">
+      </div>
+      <div class="slider-group">
+        <label>税率 <span id="v-tax">25%</span></label>
+        <input type="range" min="0" max="50" step="1" value="25" id="s-tax" oninput="updateSim()">
+      </div>
+      <div class="slider-group">
+        <label>资本支出 / 设备投资（万元）<span id="v-capex">100</span></label>
+        <input type="range" min="0" max="500" step="10" value="100" id="s-capex" oninput="updateSim()">
+      </div>
+      <div class="slider-group">
+        <label>新增借款（万元）<span id="v-debt">50</span></label>
+        <input type="range" min="0" max="300" step="10" value="50" id="s-debt" oninput="updateSim()">
+      </div>
+      <div class="slider-group">
+        <label>支付股利（万元）<span id="v-div">40</span></label>
+        <input type="range" min="0" max="300" step="5" value="40" id="s-div" oninput="updateSim()">
+      </div>
+      <div class="slider-group">
+        <label>期初现金（万元）<span id="v-cash0">100</span></label>
+        <input type="range" min="0" max="500" step="10" value="100" id="s-cash0" oninput="updateSim()">
+      </div>
+    </div>
+
+    <!-- 右侧：三张报表 -->
+    <div style="display:flex;flex-direction:column;gap:16px">
+      <!-- 利润表 -->
+      <div class="sim-panel" style="border-color:rgba(108,140,255,.3)">
+        <h3 style="color:var(--accent)">📋 利润表</h3>
+        <div class="stat-row"><span class="label">营业收入</span><span class="value" id="d-rev">1,000</span></div>
+        <div class="stat-row"><span class="label">减：营业成本</span><span class="value negative" id="d-cogs">-600</span></div>
+        <div class="stat-row" style="border-bottom:2px solid var(--accent)"><span class="label">毛利润</span><span class="value" id="d-gp">400</span></div>
+        <div class="stat-row"><span class="label">减：三费合计</span><span class="value negative" id="d-exp">-160</span></div>
+        <div class="stat-row" style="border-bottom:2px solid var(--accent)"><span class="label">税前利润</span><span class="value" id="d-ebt">240</span></div>
+        <div class="stat-row"><span class="label">减：所得税</span><span class="value negative" id="d-tax">-60</span></div>
+        <div class="stat-row highlight"><span class="label">净利润</span><span class="value" id="d-ni">180</span></div>
+        <div class="stat-row"><span class="label">净利润率</span><span class="value" id="d-nim">18.0%</span></div>
+      </div>
+
+      <!-- 现金流表 -->
+      <div class="sim-panel" style="border-color:rgba(52,211,153,.3)">
+        <h3 style="color:var(--green)">💰 现金流表</h3>
+        <div class="stat-row"><span class="label">经营活动 CFO</span><span class="value" id="d-cfo">+220</span></div>
+        <div class="stat-row"><span class="label">投资活动 CFI</span><span class="value" id="d-cfi">-100</span></div>
+        <div class="stat-row"><span class="label">筹资活动 CFF</span><span class="value" id="d-cff">+10</span></div>
+        <div class="stat-row" style="border-top:2px solid var(--green)"><span class="label">现金净增</span><span class="value" id="d-cnet">+130</span></div>
+        <div class="stat-row highlight"><span class="label">期末现金</span><span class="value" id="d-cash">230</span></div>
+      </div>
+
+      <!-- 资产负债表 -->
+      <div class="sim-panel" style="border-color:rgba(167,139,250,.3)">
+        <h3 style="color:var(--accent2)">📊 资产负债表</h3>
+        <div class="stat-row"><span class="label">总资产</span><span class="value" id="d-asset">1,230</span></div>
+        <div class="stat-row"><span class="label">总负债</span><span class="value" id="d-liab">530</span></div>
+        <div class="stat-row highlight"><span class="label">所有者权益</span><span class="value" id="d-equity">700</span></div>
+        <div class="stat-row"><span class="label">资产负债率</span><span class="value" id="d-lev">43.1%</span></div>
+      </div>
+
+      <!-- 智能警告 -->
+      <div id="sim-warnings" class="warning" style="display:none"></div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ==================== 公司案例 ==================== -->
+<div class="page" id="page-cases">
+<div class="container">
+  <div class="card">
+    <h2>🏢 不同行业公司案例对比</h2>
+    <div class="explain">
+      不同行业的公司，三张报表的特征<strong>完全不同</strong>。<br>
+      点击下方公司卡片，查看它们的财务数据。对比同格式数据，一眼看出行业差异。
+    </div>
+  </div>
+
+  <!-- 公司选择卡片 -->
+  <div class="know-grid" style="grid-template-columns:repeat(auto-fit,minmax(140px,1fr));margin-bottom:24px" id="case-selector">
+    <div class="know-item case-card active-case" data-idx="0" onclick="switchCase(0)">
+      <div class="icon">🚗</div>
+      <div class="title">比亚迪</div>
+      <div class="desc">制造业 · 新能源</div>
+    </div>
+    <div class="know-item case-card" data-idx="1" onclick="switchCase(1)">
+      <div class="icon">�</div>
+      <div class="title">腾讯</div>
+      <div class="desc">互联网 · 科技</div>
+    </div>
+    <div class="know-item case-card" data-idx="2" onclick="switchCase(2)">
+      <div class="icon">�</div>
+      <div class="title">拼多多</div>
+      <div class="desc">电商平台</div>
+    </div>
+    <div class="know-item case-card" data-idx="3" onclick="switchCase(3)">
+      <div class="icon">🏪</div>
+      <div class="title">沃尔玛</div>
+      <div class="desc">零售 · 全球</div>
+    </div>
+    <div class="know-item case-card" data-idx="4" onclick="switchCase(4)">
+      <div class="icon">🏦</div>
+      <div class="title">招商银行</div>
+      <div class="desc">银行 · 金融</div>
+    </div>
+    <div class="know-item case-card" data-idx="5" onclick="switchCase(5)">
+      <div class="icon">�</div>
+      <div class="title">万科</div>
+      <div class="desc">房地产</div>
+    </div>
+  </div>
+
+  <!-- 行业特征分析 -->
+  <div class="card" id="case-analysis" style="border-color:rgba(108,140,255,.3)">
+    <h3 id="case-title" style="margin-top:0">🏭 成熟制造企业 · 特征分析</h3>
+    <div id="case-desc" class="explain" style="margin-bottom:0"></div>
+  </div>
+
+  <!-- 三张报表并排 -->
+  <div class="sim-grid" style="margin-top:20px">
+    <!-- 利润表 -->
+    <div class="sim-panel" style="border-color:rgba(108,140,255,.3)">
+      <h3 style="color:var(--accent)">📋 利润表</h3>
+      <div class="stat-row"><span class="label">营业收入</span><span class="value" id="c-rev">-</span></div>
+      <div class="stat-row"><span class="label">减：营业成本</span><span class="value negative" id="c-cogs">-</span></div>
+      <div class="stat-row" style="border-bottom:2px solid var(--accent)"><span class="label">毛利润</span><span class="value" id="c-gp">-</span></div>
+      <div class="stat-row"><span class="label">减：三费合计</span><span class="value negative" id="c-exp">-</span></div>
+      <div class="stat-row" style="border-bottom:2px solid var(--accent)"><span class="label">营业利润</span><span class="value" id="c-op">-</span></div>
+      <div class="stat-row"><span class="label">减：利息费用</span><span class="value negative" id="c-int">-</span></div>
+      <div class="stat-row"><span class="label">减：所得税</span><span class="value negative" id="c-tax">-</span></div>
+      <div class="stat-row highlight"><span class="label">净利润</span><span class="value" id="c-ni">-</span></div>
+      <div class="stat-row"><span class="label">毛利率</span><span class="value" id="c-gpm">-</span></div>
+      <div class="stat-row"><span class="label">净利润率</span><span class="value" id="c-nim">-</span></div>
+    </div>
+
+    <!-- 现金流表 -->
+    <div class="sim-panel" style="border-color:rgba(52,211,153,.3)">
+      <h3 style="color:var(--green)">💰 现金流表</h3>
+      <div class="stat-row"><span class="label">经营活动 CFO</span><span class="value" id="c-cfo">-</span></div>
+      <div class="stat-row"><span class="label">投资活动 CFI</span><span class="value" id="c-cfi">-</span></div>
+      <div class="stat-row"><span class="label">筹资活动 CFF</span><span class="value" id="c-cff">-</span></div>
+      <div class="stat-row" style="border-top:2px solid var(--green)"><span class="label">现金净变动</span><span class="value" id="c-cnet">-</span></div>
+      <div class="stat-row highlight"><span class="label">CFO/净利润</span><span class="value" id="c-cfo-ni">-</span></div>
+    </div>
+
+    <!-- 资产负债表 -->
+    <div class="sim-panel" style="border-color:rgba(167,139,250,.3)">
+      <h3 style="color:var(--accent2)">📊 资产负债表</h3>
+      <div class="stat-row"><span class="label">流动资产</span><span class="value" id="c-ca">-</span></div>
+      <div class="stat-row"><span class="label">非流动资产</span><span class="value" id="c-nca">-</span></div>
+      <div class="stat-row" style="border-bottom:2px solid var(--accent2)"><span class="label">总资产</span><span class="value" id="c-asset">-</span></div>
+      <div class="stat-row"><span class="label">流动负债</span><span class="value" id="c-cl">-</span></div>
+      <div class="stat-row"><span class="label">非流动负债</span><span class="value" id="c-ncl">-</span></div>
+      <div class="stat-row" style="border-bottom:2px solid var(--accent2)"><span class="label">总负债</span><span class="value" id="c-liab">-</span></div>
+      <div class="stat-row highlight"><span class="label">所有者权益</span><span class="value" id="c-equity">-</span></div>
+      <div class="stat-row"><span class="label">资产负债率</span><span class="value" id="c-lev">-</span></div>
+      <div class="stat-row"><span class="label">流动比率</span><span class="value" id="c-cur">-</span></div>
+    </div>
+  </div>
+
+  <!-- 横向对比表 -->
+  <div class="card" style="margin-top:24px">
+    <h2>📊 六家公司核心指标横向对比</h2>
+    <div style="overflow-x:auto">
+    <table class="stmt-table" id="compare-table">
+      <tr>
+        <th>指标</th><th>🚗 比亚迪</th><th>� 腾讯</th><th>� 拼多多</th>
+        <th>🏪 沃尔玛</th><th>🏦 招行</th><th>� 万科</th>
+      </tr>
+    </table>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ==================== 答题测验 ==================== -->
+<div class="page" id="page-quiz">
+<div class="container">
+  <div class="card">
+    <h2>✏️ 答题测验</h2>
+    <div class="explain">
+      共10道题，涵盖三张报表的核心知识点。<br>
+      点击选项即可作答，答完后查看得分。
+    </div>
+  </div>
+
+  <div id="quiz-container"></div>
+
+  <div id="quiz-score" class="score-display" style="display:none">
+    <div class="big" id="score-num">0/10</div>
+    <p style="margin-top:8px;color:var(--text2)" id="score-msg"></p>
+    <button class="btn" style="margin-top:16px" onclick="resetQuiz()">重新答题</button>
+  </div>
+</div>
+</div>
+
+<script>
+// ========== 导航切换 ==========
+function showPage(id){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  // 高亮对应的导航按钮
+  const navMap={home:0,income:1,balance:2,cashflow:3,sim:4,cases:5,quiz:6};
+  const btns=document.querySelectorAll('.nav-btn');
+  if(btns[navMap[id]])btns[navMap[id]].classList.add('active');
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+// ========== 模拟器 ==========
+let simData={
+  rev:1000,cogs:60,exp:160,tax:25,capex:100,debt:50,div:40,cash0:100,
+  // 资产负债表基数
+  baseAsset:500,baseLiab:300,baseEquity:200,baseAR:120,baseInv:100,baseFA:400,baseIA:100,
+  baseAP:100,baseST:80,baseLT:170,baseShares:200,baseURP:0
+};
+
+function updateSim(){
+  const s=k=>parseFloat(document.getElementById('s-'+k).value);
+  simData.rev=s('rev');simData.cogs=s('cogs');simData.exp=s('exp');simData.tax=s('tax');
+  simData.capex=s('capex');simData.debt=s('debt');simData.div=s('div');simData.cash0=s('cash0');
+
+  // 显示滑块值
+  document.getElementById('v-rev').textContent=simData.rev.toLocaleString();
+  document.getElementById('v-cogs').textContent=simData.cogs+'%';
+  document.getElementById('v-exp').textContent=simData.exp.toLocaleString();
+  document.getElementById('v-tax').textContent=simData.tax+'%';
+  document.getElementById('v-capex').textContent=simData.capex.toLocaleString();
+  document.getElementById('v-debt').textContent=simData.debt.toLocaleString();
+  document.getElementById('v-div').textContent=simData.div.toLocaleString();
+  document.getElementById('v-cash0').textContent=simData.cash0.toLocaleString();
+
+  // 利润表
+  const cogsAmt=Math.round(simData.rev*simData.cogs/100);
+  const gp=simData.rev-cogsAmt;
+  const ebt=gp-simData.exp;
+  const taxAmt=Math.round(Math.max(0,ebt)*simData.tax/100);
+  const ni=ebt-taxAmt;
+  const nim=(simData.rev>0?(ni/simData.rev*100):0).toFixed(1);
+
+  document.getElementById('d-rev').textContent=simData.rev.toLocaleString();
+  document.getElementById('d-cogs').textContent='-'+cogsAmt.toLocaleString();
+  document.getElementById('d-gp').textContent=gp.toLocaleString();
+  document.getElementById('d-exp').textContent='-'+simData.exp.toLocaleString();
+  document.getElementById('d-ebt').textContent=ebt.toLocaleString();
+  document.getElementById('d-tax').textContent='-'+taxAmt.toLocaleString();
+  document.getElementById('d-ni').textContent=ni.toLocaleString();
+  document.getElementById('d-nim').textContent=nim+'%';
+
+  // 现金流表
+  // 简化CFO = 净利润 + 非现金费用(折旧~capex*10%) - 应收增加(~rev*2%) + 应付增加(~cogs*1%) - 存货增加(~cogs*1%)
+  const depr=Math.round(simData.capex*0.1);
+  const arChange=Math.round(simData.rev*0.02);
+  const apChange=Math.round(cogsAmt*0.01);
+  const invChange=Math.round(cogsAmt*0.01);
+  const cfo=ni+depr-arChange+apChange-invChange;
+  const cfi=-simData.capex+Math.round(simData.capex*0.05);// 净投资 = capex - 残值回收
+  const cff=simData.debt-simData.div;
+  const cnet=cfo+cfi+cff;
+  const cash=simData.cash0+cnet;
+
+  const fmt=n=>(n>=0?'+':'')+n.toLocaleString();
+  document.getElementById('d-cfo').textContent=fmt(cfo);
+  document.getElementById('d-cfo').className='value '+(cfo>=0?'positive':'negative');
+  document.getElementById('d-cfi').textContent=fmt(cfi);
+  document.getElementById('d-cfi').className='value '+(cfi>=0?'positive':'negative');
+  document.getElementById('d-cff').textContent=fmt(cff);
+  document.getElementById('d-cff').className='value '+(cff>=0?'positive':'negative');
+  document.getElementById('d-cnet').textContent=fmt(cnet);
+  document.getElementById('d-cnet').className='value '+(cnet>=0?'positive':'negative');
+  document.getElementById('d-cash').textContent=cash.toLocaleString();
+
+  // 资产负债表
+  const cashEnd=Math.max(0,cash);
+  const ar=simData.baseAR+arChange;
+  const inv=simData.baseInv+invChange;
+  const fa=simData.baseFA+simData.capex-depr;
+  const ia=simData.baseIA;
+  const totalAsset=cashEnd+ar+inv+fa+ia;
+
+  const ap=simData.baseAP+apChange;
+  const st=simData.baseST;
+  const lt=simData.baseLT+simData.debt;
+  const totalLiab=ap+st+lt;
+
+  const shares=simData.baseShares;
+  const urp=simData.baseURP+ni-simData.div;
+  const equity=shares+urp;
+  const lev=(totalAsset>0?(totalLiab/totalAsset*100):0).toFixed(1);
+
+  document.getElementById('d-asset').textContent=totalAsset.toLocaleString();
+  document.getElementById('d-liab').textContent=totalLiab.toLocaleString();
+  document.getElementById('d-equity').textContent=equity.toLocaleString();
+  document.getElementById('d-lev').textContent=lev+'%';
+
+  // 智能警告
+  const warns=[];
+  if(ni>0&&cfo<0) warns.push('⚠️ 净利润为正但经营现金流为负——利润可能是纸面富贵！');
+  if(cash<0) warns.push('🚨 期末现金为负！公司面临破产风险！');
+  if(parseFloat(lev)>70) warns.push('⚠️ 资产负债率超过70%——财务杠杆过高，风险较大！');
+  if(gp<0) warns.push('🚨 毛利润为负——卖得越多亏得越多！');
+  if(ni<0&&cfo>0) warns.push('💡 虽然亏损，但经营现金流为正——可能是折旧等非现金费用导致的亏损。');
+  if(ni>0&&simData.div>ni) warns.push('⚠️ 分红超过净利润——公司在吃老本！');
+  
+  const wEl=document.getElementById('sim-warnings');
+  if(warns.length>0){wEl.style.display='block';wEl.innerHTML=warns.join('<br>');}
+  else{wEl.style.display='none';}
+}
+
+// ========== 公司案例 ==========
+const fmt=n=>(n>=0?'+':'')+n.toLocaleString();
+const fmtAbs=n=>n.toLocaleString();
+
+const companies=[
+  // 0: 比亚迪 (2024年报, 单位:亿元)
+  {
+    title:'🚗 比亚迪（002594.SZ）· 2024年度报告',
+    desc:'全球新能源汽车领导者。2024年营收<strong>7771亿</strong>，同比增长29%；净利润<strong>403亿</strong>，同比增34%。经营现金流<strong>1335亿</strong>极为充沛（CFO/NI=3.3倍），体现了制造业的强现金创造能力。研发投入542亿，资产负债率50%。',
+    income:{rev:7771,cogs:6520,gp:1251,exp:540,op:711,int:120,tax:188,ni:403},
+    cashflow:{cfo:1335,cfi:-680,cff:-350},
+    balance:{ca:3500,nca:4334,cl:3200,ncl:1800},
+    tags:['毛利率 16.1%','净利润率 5.2%','CFO/NI 3.31','资产负债率 63.8%','流动比率 1.09','数据来源:比亚迪2024年报']
+  },
+  // 1: 腾讯 (2024年报, 单位:亿元)
+  {
+    title:'� 腾讯控股（00700.HK）· 2024年度报告',
+    desc:'中国最大互联网公司。2024年营收<strong>6603亿</strong>，同比增8%；IFRS净利润<strong>1941亿</strong>，同比增68%。毛利率52.9%，经营利润率32%，盈利能力极强。总现金4154亿，自由现金流1553亿。回购1120亿港元回馈股东。',
+    income:{rev:6603,cogs:3111,gp:3492,exp:1411,op:2081,int:120,tax:450,ni:1941},
+    cashflow:{cfo:2321,cfi:-768,cff:-1500},
+    balance:{ca:4962,nca:12848,cl:3969,ncl:3302},
+    tags:['毛利率 52.9%','净利润率 29.4%','CFO/NI 1.20','资产负债率 40.8%','流动比率 1.25','数据来源:腾讯2024年报']
+  },
+  // 2: 拼多多 (2024年报, 单位:亿元)
+  {
+    title:'� 拼多多PDD（PDD.US）· 2024年度报告',
+    desc:'中国电商新巨头+跨境电商TEMU。2024年营收<strong>3938亿</strong>，同比暴增59%；净利润<strong>1124亿</strong>，同比增87%。毛利率63.9%，净利润率28.5%。经营现金流1219亿，账面净现金超3000亿，零有息负债，财务结构极其健康。',
+    income:{rev:3938,cogs:1539,gp:2399,exp:1315,op:1084,int:30,tax:270,ni:1124},
+    cashflow:{cfo:1219,cfi:-400,cff:-200},
+    balance:{ca:4200,nca:850,cl:1600,ncl:317},
+    tags:['毛利率 60.9%','净利润率 28.5%','CFO/NI 1.08','资产负债率 38.0%','流动比率 2.63','数据来源:拼多多2024年报']
+  },
+  // 3: 沃尔玛 (FY2024, 截至2024.1.31, 汇率约7.1, 单位:亿元RMB)
+  {
+    title:'🏪 沃尔玛（WMT.US）· FY2024年度报告',
+    desc:'全球最大零售商。FY2024营收$6481亿(约<strong>4.6万亿</strong>RMB)，同比增6%。净利润$155亿(约<strong>1102亿</strong>RMB)。毛利率24.4%、净利率仅2.4%——典型的薄利多销模式。经营现金流$357亿(约2536亿RMB)极为强劲。全球10,500+门店。',
+    income:{rev:46016,cogs:34800,gp:11216,exp:9300,op:1918,int:190,tax:396,ni:1102},
+    cashflow:{cfo:2536,cfi:-1200,cff:-600},
+    balance:{ca:5458,nca:12509,cl:6562,ncl:4890},
+    tags:['毛利率 24.4%','净利润率 2.4%','CFO/NI 2.30','资产负债率 64.1%','流动比率 0.83','数据来源:沃尔玛FY2024年报']
+  },
+  // 4: 招商银行 (2024年报, 单位:亿元)
+  {
+    title:'🏦 招商银行（600036.SH）· 2024年度报告',
+    desc:'中国领先的零售银行。2024年营收<strong>3375亿</strong>，净利润<strong>1484亿</strong>。银行报表特殊：利息收入是主要利润来源（净息差2.0%），资产负债率<strong>90.5%</strong>是行业常态（储户存款=负债）。经营现金流4470亿（客户存款增加）。',
+    income:{rev:3375,cogs:0,gp:3375,exp:1076,op:2299,int:0,tax:814,ni:1484},
+    cashflow:{cfo:4470,cfi:-2929,cff:-800},
+    balance:{ca:60000,nca:61520,cl:55000,ncl:54186},
+    tags:['净息差 2.0%','净利润率 44.0%','CFO/NI 3.01','资产负债率 90.5%','流动比率 1.09','数据来源:招商银行2024年报']
+  },
+  // 5: 万科 (2024年报, 单位:亿元)
+  {
+    title:'� 万科企业（000002.SZ）· 2024年度报告',
+    desc:'中国房地产行业龙头（暴雷中）。2024年营收<strong>3432亿</strong>，同比下降26%；净亏损<strong>495亿</strong>（计提存货减值）。毛利率仅6.6%。经营现金流38亿勉强为正。资产负债率73.7%，净负债率80.6%。行业深度调整的典型案例。',
+    income:{rev:3432,cogs:3206,gp:226,exp:520,op:-294,int:180,tax:21,ni:-495},
+    cashflow:{cfo:38,cfi:-350,cff:300},
+    balance:{ca:7500,nca:5363,cl:6800,ncl:2674},
+    tags:['毛利率 6.6%','净利润率 -14.4%','CFO/NI —','资产负债率 73.7%','流动比率 1.10','数据来源:万科2024年报']
+  }
+];
+
+function switchCase(idx){
+  const c=companies[idx];
+  // 更新选中状态
+  document.querySelectorAll('.case-card').forEach((el,i)=>{
+    el.classList.toggle('active-case',i===idx);
+  });
+  // 标题和描述
+  document.getElementById('case-title').textContent=c.title;
+  document.getElementById('case-desc').innerHTML=c.desc;
+  // 利润表
+  const I=c.income;
+  document.getElementById('c-rev').textContent=fmtAbs(I.rev);
+  document.getElementById('c-cogs').textContent='-'+fmtAbs(I.cogs);
+  document.getElementById('c-gp').textContent=fmtAbs(I.gp);
+  document.getElementById('c-exp').textContent='-'+fmtAbs(I.exp);
+  document.getElementById('c-op').textContent=fmtAbs(I.op);
+  document.getElementById('c-op').className='value '+(I.op>=0?'positive':'negative');
+  document.getElementById('c-int').textContent='-'+fmtAbs(I.int);
+  document.getElementById('c-tax').textContent='-'+fmtAbs(I.tax);
+  document.getElementById('c-ni').textContent=fmtAbs(I.ni);
+  document.getElementById('c-ni').className='value '+(I.ni>=0?'positive':'negative');
+  document.getElementById('c-gpm').textContent=c.tags[0].split(' ')[1];
+  document.getElementById('c-nim').textContent=c.tags[1].split(' ')[1];
+  // 现金流表
+  const F=c.cashflow;
+  document.getElementById('c-cfo').textContent=fmt(F.cfo);
+  document.getElementById('c-cfo').className='value '+(F.cfo>=0?'positive':'negative');
+  document.getElementById('c-cfi').textContent=fmt(F.cfi);
+  document.getElementById('c-cfi').className='value '+(F.cfi>=0?'positive':'negative');
+  document.getElementById('c-cff').textContent=fmt(F.cff);
+  document.getElementById('c-cff').className='value '+(F.cff>=0?'positive':'negative');
+  const cnet=F.cfo+F.cfi+F.cff;
+  document.getElementById('c-cnet').textContent=fmt(cnet);
+  document.getElementById('c-cnet').className='value '+(cnet>=0?'positive':'negative');
+  document.getElementById('c-cash').textContent=fmt(cnet);
+  document.getElementById('c-cfo-ni').textContent=c.tags[2].split(' ')[1];
+  // 资产负债表
+  const B=c.balance;
+  const ta=B.ca+B.nca, tl=B.cl+B.ncl, eq=ta-tl;
+  document.getElementById('c-ca').textContent=fmtAbs(B.ca);
+  document.getElementById('c-nca').textContent=fmtAbs(B.nca);
+  document.getElementById('c-asset').textContent=fmtAbs(ta);
+  document.getElementById('c-cl').textContent=fmtAbs(B.cl);
+  document.getElementById('c-ncl').textContent=fmtAbs(B.ncl);
+  document.getElementById('c-liab').textContent=fmtAbs(tl);
+  document.getElementById('c-equity').textContent=fmtAbs(eq);
+  document.getElementById('c-lev').textContent=c.tags[3].split(' ')[1];
+  document.getElementById('c-cur').textContent=c.tags[4].split(' ')[1];
+}
+
+function renderCompareTable(){
+  const metrics=[
+    {name:'营业收入',key:'rev',src:'income'},
+    {name:'毛利率',key:'gpm',calc:true},
+    {name:'净利润',key:'ni',src:'income'},
+    {name:'净利润率',key:'nim',calc:true},
+    {name:'CFO',key:'cfo',src:'cashflow'},
+    {name:'CFO/净利润',key:'cfo_ni',calc:true},
+    {name:'总资产',key:'ta',src:'balance'},
+    {name:'所有者权益',key:'eq',src:'balance'},
+    {name:'资产负债率',key:'lev',calc:true},
+    {name:'流动比率',key:'cur',calc:true}
+  ];
+  const vals=companies.map(c=>{
+    const I=c.income,F=c.cashflow,B=c.balance;
+    const ta=B.ca+B.nca,tl=B.cl+B.ncl,eq=ta-tl;
+    return{
+      rev:I.rev, gpm:I.rev>0?((I.gp/I.rev*100).toFixed(1)+'%'):'—',
+      ni:I.ni, nim:I.rev>0?((I.ni/I.rev*100).toFixed(1)+'%'):'—',
+      cfo:F.cfo, cfo_ni:I.ni!==0?(F.cfo/I.ni).toFixed(2)+'x':'—',
+      ta:ta, eq:eq,
+      lev:ta>0?((tl/ta*100).toFixed(1)+'%'):'—',
+      cur:B.cl>0?(B.ca/B.cl).toFixed(2):'—'
+    };
+  });
+  const tb=document.getElementById('compare-table');
+  // 保留表头，重建内容
+  const header=tb.querySelector('tr');
+  tb.innerHTML='';
+  tb.appendChild(header);
+  metrics.forEach(m=>{
+    const tr=document.createElement('tr');
+    const td0=document.createElement('td');
+    td0.textContent=m.name;
+    td0.style.fontWeight='600';
+    tr.appendChild(td0);
+    for(let i=0;i<6;i++){
+      const td=document.createElement('td');
+      td.className='num';
+      const v=vals[i][m.key];
+      if(typeof v==='number'){
+        td.textContent=(v>=0?'':'')+v.toLocaleString();
+        td.className='num '+(v>=0?'positive':'negative');
+      } else {
+        td.textContent=v;
+      }
+      tr.appendChild(td);
+    }
+    tb.appendChild(tr);
+  });
+}
+
+// 初始化公司案例
+switchCase(0);
+renderCompareTable();
+
+// ========== 答题测验 ==========
+const quizData=[
+  {
+    q:'利润表反映的是什么？',
+    opts:['某个时间点的财务状况','一段时间内的经营成果','现金的流入流出','公司的市值'],
+    ans:1,
+    explain:'利润表是一段时期内的"视频"，反映从收入到净利润的完整经营成果。'
+  },
+  {
+    q:'资产负债表的核心等式是？',
+    opts:['收入 - 费用 = 利润','资产 = 负债 + 所有者权益','经营 + 投资 + 筹资 = 现金净增','收入 = 现金 + 应收'],
+    ans:1,
+    explain:'资产=负债+所有者权益是会计恒等式，永远平衡。'
+  },
+  {
+    q:'以下哪个最能反映企业的真实盈利质量？',
+    opts:['净利润','营业收入','经营现金流（CFO）','总资产'],
+    ans:2,
+    explain:'CFO是真金白银，净利润可能受应计项目影响。CFO>净利润说明利润质量高。'
+  },
+  {
+    q:'公司购买了一台新设备，这笔支出应该出现在哪张报表？',
+    opts:['只出现在利润表','只出现在现金流量表','利润表和现金流量表都会体现','只出现在资产负债表'],
+    ans:2,
+    explain:'购买设备：现金流出（现金流表CFI减少），同时固定资产增加（资产负债表），折旧会出现在利润表费用中。'
+  },
+  {
+    q:'一家初创公司的现金流特征最可能是？',
+    opts:['CFO+ CFI- CFF+','CFO- CFI- CFF+','CFO+ CFI+ CFF-','CFO- CFI+ CFF-'],
+    ans:1,
+    explain:'初创公司经营亏损（CFO-）、大量投资（CFI-）、靠融资续命（CFF+）。'
+  },
+  {
+    q:'毛利率的计算公式是？',
+    opts:['净利润/营业收入','(营业收入-营业成本)/营业收入','营业利润/营业收入','经营现金流/营业收入'],
+    ans:1,
+    explain:'毛利率 = 毛利润/营业收入 = (收入-成本)/收入，反映产品的基础获利能力。'
+  },
+  {
+    q:'应收账款增加，在现金流表上意味着？',
+    opts:['现金流入增加','现金流入减少','对现金流无影响','现金流出增加'],
+    ans:1,
+    explain:'应收账款增加意味着"卖了东西但还没收到钱"，利润表确认了收入，但现金没进来，所以CFO要减去应收增加额。'
+  },
+  {
+    q:'一家成熟企业的典型现金流模式是？',
+    opts:['CFO+ CFI- CFF-','CFO- CFI- CFF+','CFO+ CFI+ CFF+','CFO- CFI+ CFF-'],
+    ans:0,
+    explain:'成熟企业经营稳定赚钱（CFO+），继续投资维持（CFI-），还债和分红（CFF-）。'
+  },
+  {
+    q:'资产负债率超过多少通常被认为风险较大？',
+    opts:['30%','50%','60%','80%'],
+    ans:2,
+    explain:'一般认为资产负债率超过60%风险较大（行业差异大），超过70%属于高杠杆。'
+  },
+  {
+    q:'净利润为正，但经营现金流为负，最可能的原因是？',
+    opts:['公司交了太多税','大量赊销导致应收增加','公司购买了新设备','公司偿还了银行贷款'],
+    ans:1,
+    explain:'大量赊销使利润表上确认了收入（净利润正），但现金没收到（CFO负），这是利润质量差的典型信号。'
+  }
+];
+
+let userAnswers=new Array(quizData.length).fill(-1);
+let quizSubmitted=false;
+
+function renderQuiz(){
+  const c=document.getElementById('quiz-container');
+  c.innerHTML=quizData.map((q,i)=>`
+    <div class="quiz-q" id="qq-${i}">
+      <h4><span class="q-num">Q${i+1}.</span>${q.q}</h4>
+      ${q.opts.map((o,j)=>`
+        <div class="quiz-opt" id="qo-${i}-${j}" onclick="selectOpt(${i},${j})">${String.fromCharCode(65+j)}. ${o}</div>
+      `).join('')}
+      <div class="quiz-feedback" id="qf-${i}"></div>
+    </div>
+  `).join('')+'<div style="text-align:center;margin:20px 0"><button class="btn" onclick="submitQuiz()" id="quiz-submit-btn">提交答案</button></div>';
+}
+
+function selectOpt(qi,oi){
+  if(quizSubmitted)return;
+  userAnswers[qi]=oi;
+  quizData[qi].opts.forEach((_,j)=>{
+    document.getElementById('qo-'+qi+'-'+j).classList.remove('selected');
+  });
+  document.getElementById('qo-'+qi+'-'+oi).classList.add('selected');
+}
+
+function submitQuiz(){
+  if(quizSubmitted)return;
+  quizSubmitted=true;
+  let score=0;
+  quizData.forEach((q,i)=>{
+    const fb=document.getElementById('qf-'+i);
+    const correct=userAnswers[i]===q.ans;
+    if(userAnswers[i]===-1){
+      fb.className='quiz-feedback show fail';
+      fb.textContent='未作答。正确答案：'+String.fromCharCode(65+q.ans)+'。'+q.explain;
+    } else {
+      document.getElementById('qo-'+i+'-'+q.ans).classList.add('correct');
+      if(!correct){
+        document.getElementById('qo-'+i+'-'+userAnswers[i]).classList.add('wrong');
+        fb.className='quiz-feedback show fail';
+        fb.textContent='❌ 正确答案：'+String.fromCharCode(65+q.ans)+'。'+q.explain;
+      } else {
+        fb.className='quiz-feedback show pass';
+        fb.textContent='✅ 正确！'+q.explain;
+        score++;
+      }
+    }
+  });
+  document.getElementById('quiz-score').style.display='block';
+  document.getElementById('score-num').textContent=score+' / '+quizData.length;
+  const pct=score/quizData.length;
+  document.getElementById('score-msg').textContent=
+    pct>=0.9?'🎉 太棒了！你已经掌握了三张报表的核心知识！':
+    pct>=0.7?'👍 不错！再巩固一下薄弱环节。':
+    pct>=0.5?'💪 继续加油，建议回顾对应的知识页面。':
+    '📚 建议重新学习三张报表的内容后再来挑战！';
+  document.getElementById('quiz-submit-btn').disabled=true;
+  document.getElementById('quiz-submit-btn').style.opacity=0.5;
+  document.getElementById('quiz-score').scrollIntoView({behavior:'smooth'});
+}
+
+function resetQuiz(){
+  userAnswers=new Array(quizData.length).fill(-1);
+  quizSubmitted=false;
+  document.getElementById('quiz-score').style.display='none';
+  renderQuiz();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+// 初始化
+updateSim();
+renderQuiz();
+</script>
+</body>
+</html>
